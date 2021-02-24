@@ -35,3 +35,22 @@
   when:
     - ansible_distribution_major_version | int >= 8
     - not localhost_cert.stat.exists
+
+- name: Remove welcome vhost.
+  file:
+    path: "{{ apache_conf_path }}/welcome.conf"
+    state: absent
+  notify: restart apache
+  when: apache_remove_default_vhost
+
+- name: Remove _default_:443 vhost.
+  blockinfile:
+    path: "{{ apache_conf_path }}/ssl.conf"
+    insertafter: "^<VirtualHost _default_:443>$"
+    insertbefore: "^</VirtualHost>$"
+    state: absent
+    backup: yes
+  notify: restart apache
+  when:
+    - apache_remove_default_vhost
+    - apache_vhosts_ssl | length > 0
